@@ -1,3 +1,7 @@
 .env
 data/*
-logs/*
+**/logs/*
+
+**/__pycache__
+
+**/*.*tmp
