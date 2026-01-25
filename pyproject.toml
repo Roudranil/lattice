@@ -12,5 +12,6 @@ dependencies = [
     "openai>=2.15.0",
     "openalexapi>=0.0.1a0",
     "pandas>=3.0.0",
+    "python-dotenv>=1.2.1",
     "qdrant-client>=1.16.2",
 ]
