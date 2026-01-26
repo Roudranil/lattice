@@ -8,6 +8,7 @@ dependencies = [
     "deepagents>=0.3.8",
     "jupyter>=1.1.1",
     "langchain-openai>=1.1.7",
+    "langchain-tavily>=0.2.17",
     "langgraph>=1.0.7",
     "langsmith>=0.6.4",
     "loguru>=0.7.3",
