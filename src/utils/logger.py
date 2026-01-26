@@ -10,7 +10,6 @@ from loguru import logger
 
 
 def create_logger(
-    name: str = "loggy",
     path: str | Path = "./logs",
     filename: str | Path = "logfile.log",
     format: Optional[str] = None,
@@ -32,7 +31,6 @@ def create_logger(
     - Extra file sink arguments are forwarded via *file_args/**file_kwargs.
 
     Args:
-        name (str, optional): the name of the logging object. Defaults to "loggy".
         path (str, optional): the path where the log file will be saved. Defaults to "./".
         filename (str, optional): the filename of the log file. Defaults to "logfile.log".
         format (str, optional): the format of the logging messages. Defaults to None.
