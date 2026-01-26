@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     snowflake: str = "Snowflake/snowflake-arctic-embed-l-v2.0"
     specter: str = "allenai/specter2_base"
     _specter_adapter: str = "allenai/specter2"
+    baai_bge: str = "BAAI/bge-multilingual-gemma2"
     # reranker
     encoder_model: str = "m3rg-iitd/matscibert"
     reranker_model: str = "Qwen/Qwen3-Reranker-0.6B"
