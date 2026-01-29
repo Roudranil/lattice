@@ -1,12 +1,12 @@
 from typing import Iterable, Optional
 
 from rich.console import Console
-from rich.theme import Theme
-from rich.markdown import Markdown
 from rich.live import Live
-from rich.text import Text
+from rich.markdown import Markdown
 from rich.padding import Padding
 from rich.prompt import Prompt
+from rich.text import Text
+from rich.theme import Theme
 
 # 1. Define the Theme based on your Loguru specs
 # Rich uses distinct syntax: "bold red" instead of "<red><bold>"
@@ -21,11 +21,15 @@ CUSTOM_THEME = Theme(
         "log.error": "bold red",
         "log.critical": "bold white on red",
         # Chat Entities
+        "chat.system.logo": "bold magenta",
+        "chat.ai.logo": "bold green",
+        "chat.user.logo": "bold blue",
         "chat.system": "magenta",
         "chat.ai": "white",
         "chat.user": "blue",
         # Extras
         "chat.tool": "dim yellow",  # Integrated as requested
+        "chat.tool.logo": "yellow",  # Integrated as requested
         "chat.token": "dim white italic",
     }
 )
@@ -71,12 +75,12 @@ class ChatPrinter:
         Style: Cyan, indented slightly to distinguish from logs.
         """
         self.console.print()  # Spacer
-        prefix = Text("USER", style="chat.user")
-        prefix.append("  ", style="chat.user")
+        prefix = Text("USER", style="chat.user.logo")
+        prefix.append("  ", style="chat.user.logo")
 
         # We print the header, then the content indented
         self.console.print(prefix)
-        self.console.print(Padding(Text(content, style="chat.user"), (0, 0, 0, 2)))
+        self.console.print(Padding(Text(content, style="chat.user"), ((0, 4, 0, 2))))
 
     def prompt_user(self, prompt_text: str = ">> ") -> str:
         """
@@ -85,8 +89,8 @@ class ChatPrinter:
         self.console.print()  # Spacer
 
         # 1. Print Header
-        header = Text("USER", style="chat.user")
-        header.append("  ", style="chat.user")
+        header = Text("USER", style="chat.user.logo")
+        header.append("  ", style="chat.user.logo")
         self.console.print(header)
 
         # 2. Capture Input (The [chat.user] tag makes the prompt AND typing cyan)
@@ -101,9 +105,9 @@ class ChatPrinter:
             tool_name (str): The name of the tool (e.g., "ArxivSearch").
             status (str): Short status message.
         """
-        text = Text("TOOL", style="chat.tool")
-        text.append(f"   {tool_name}: {status}", style="chat.tool")
-        self.console.print(Padding(text, (0, 0, 0, 2)))
+        text = Text("TOOL   ", style="chat.tool.logo")
+        text.append(f"{tool_name}: {status}", style="chat.tool")
+        self.console.print(Padding(text, ((0, 4, 0, 2))))
 
     def ai(self, content: str) -> None:
         """
@@ -115,14 +119,14 @@ class ChatPrinter:
         self.console.print()  # Spacer
 
         # Header
-        header = Text("AI", style="chat.ai")
-        header.append(" 󰚩 ", style="chat.ai")
+        header = Text("AI", style="chat.ai.logo")
+        header.append(" 󰚩 ", style="chat.ai.logo")
         self.console.print(header)
 
         # Body
         # We also use Padding and apply the 'chat.ai' style to the Markdown
         md = Markdown(content, style="chat.ai")
-        self.console.print(Padding(md, (0, 0, 0, 2)))
+        self.console.print(Padding(md, ((0, 4, 0, 2))))
 
     def stream_ai(self, token_generator: Iterable[str]) -> str:
         """
@@ -139,8 +143,8 @@ class ChatPrinter:
         self.console.print()  # Spacer
 
         # Header
-        header = Text("AI", style="chat.ai")
-        header.append(" 󰚩 ", style="chat.ai")
+        header = Text("AI", style="chat.ai.logo")
+        header.append(" 󰚩 ", style="chat.ai.logo")
         self.console.print(header)
 
         full_response = ""
@@ -153,7 +157,7 @@ class ChatPrinter:
                 # Render Markdown without a Panel/Border
                 # Padding(..., (top, right, bottom, left))
                 md = Markdown(full_response, style="chat.ai")
-                live.update(Padding(md, (0, 0, 0, 2)))
+                live.update(Padding(md, ((0, 4, 0, 2))))
 
         return full_response
 
@@ -169,7 +173,7 @@ class ChatPrinter:
         msg = f"󰥔 {latency:.2f}s |  {total} tokens ({prompt_tokens}  / {completion_tokens} )"
 
         self.console.print(
-            Padding(Text(msg, style="chat.token", justify="right"), (0, 0, 1, 0))
+            Padding(Text(msg, style="chat.token", justify="right"), ((0, 4, 0, 0)))
         )
 
     def _print_log(self, level: str, icon: str, message: str) -> None:
@@ -187,7 +191,7 @@ class ChatPrinter:
         if level == "TRACE":
             label = Padding(
                 Text(f"[{icon}] {message}", style=style_key, justify="right"),
-                (0, 0, 1, 0),
+                ((0, 4, 0, 0)),
             )
         else:
             label = Text(f"[{icon}] {message}", style=style_key)
