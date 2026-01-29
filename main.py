@@ -2,10 +2,6 @@ import datetime
 import sys
 import time
 import uuid
-
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
-
 from typing import Annotated, List, TypedDict
 
 from langchain_core.messages import (
@@ -80,57 +76,57 @@ graph.add_edge("chat", END)
 agent = graph.compile()
 logger.info("Graph compiled and agent created.")
 
-# ## create the chat loop
-# config = {"configurable": {"thread_id": str(uuid.uuid4())}}
-# printer.system(f"Chat started (thread id: {config['configurable']['thread_id']})")
-# printer.debug("Type 'exit' to quit.\n")
+## create the chat loop
+config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+printer.system(f"Chat started (thread id: {config['configurable']['thread_id']})")
+printer.debug("Type 'exit' to quit.\n")
 
 
-# while True:
-#     try:
-#         user_input = printer.prompt_user(">> ")
-#         if user_input.lower() == "exit":
-#             printer.system("Chat ended by user.")
-#             break
+while True:
+    try:
+        user_input = printer.prompt_user(">> ")
+        if user_input.lower() == "exit":
+            printer.system("Chat ended by user.")
+            break
 
-#         if not user_input.strip():
-#             continue
+        if not user_input.strip():
+            continue
 
-#         # pass a mutable dict to track token usage
-#         stream_stats = {"input": 0, "output": 0}
+        # pass a mutable dict to track token usage
+        stream_stats = {"input": 0, "output": 0}
 
-#         def response_generator():
-#             for msg_chunk, metadata in agent.stream(
-#                 {"messages": [HumanMessage(content=user_input)]},
-#                 config=config,
-#                 stream_mode="messages",
-#             ):
-#                 if isinstance(msg_chunk, AIMessageChunk):
-#                     # B. Capture Usage Metadata (usually in the last chunk)
-#                     if msg_chunk.usage_metadata:
-#                         stream_stats["input"] = msg_chunk.usage_metadata.get(
-#                             "input_tokens", 0
-#                         )
-#                         stream_stats["output"] = msg_chunk.usage_metadata.get(
-#                             "output_tokens", 0
-#                         )
-#                     # A. Yield the content for the UI
-#                     if msg_chunk.content:
-#                         yield msg_chunk.content
+        def response_generator():
+            for msg_chunk, metadata in agent.stream(
+                {"messages": [HumanMessage(content=user_input)]},
+                config=config,
+                stream_mode="messages",
+            ):
+                if isinstance(msg_chunk, AIMessageChunk):
+                    # B. Capture Usage Metadata (usually in the last chunk)
+                    if msg_chunk.usage_metadata:
+                        stream_stats["input"] = msg_chunk.usage_metadata.get(
+                            "input_tokens", 0
+                        )
+                        stream_stats["output"] = msg_chunk.usage_metadata.get(
+                            "output_tokens", 0
+                        )
+                    # A. Yield the content for the UI
+                    if msg_chunk.content:
+                        yield msg_chunk.content
 
-#         start_time = time.time()
-#         final_response = printer.stream_ai(response_generator())
-#         duration = time.time() - start_time
-#         printer.token_usage(
-#             prompt_tokens=stream_stats["input"],
-#             completion_tokens=stream_stats["output"],
-#             latency=duration,
-#         )
-#     except KeyboardInterrupt:
-#         printer.warning("Interrupted by user.")
-#         logger.warning("Chat interrupted by user via KeyboardInterrupt.")
-#         break
-#     except Exception as e:
-#         printer.error(f"Runtime Error: {e}")
-#         logger.exception(f"Runtime Error: {e}")
-#         break
+        start_time = time.time()
+        final_response = printer.stream_ai(response_generator())
+        duration = time.time() - start_time
+        printer.token_usage(
+            prompt_tokens=stream_stats["input"],
+            completion_tokens=stream_stats["output"],
+            latency=duration,
+        )
+    except KeyboardInterrupt:
+        printer.warning("Interrupted by user.")
+        logger.warning("Chat interrupted by user via KeyboardInterrupt.")
+        break
+    except Exception as e:
+        printer.error(f"Runtime Error: {e}")
+        logger.exception(f"Runtime Error: {e}")
+        break
