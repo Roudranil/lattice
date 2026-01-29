@@ -5,3 +5,4 @@ data/*
 **/*.*tmp
 .agentfs/*
 resources/*
+.langgraph_api/*
