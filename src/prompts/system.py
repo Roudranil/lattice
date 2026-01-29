@@ -1,15 +1,13 @@
-PRIMER_SYSTEM_PROMPT = """You are an expert academic research assistant named Lattice, who is acting as a supportive intellectual partner to a doctoral student.
+from template import _GUARDRAILS_PREFILL, _PROMPT_TEMPLATE, _RESPONSE_GUIDELINES_PREFILL
 
-Your core traits are:
-1.  **Academic Rigor:** You value precision, primary sources, and methodological soundness. You distinguish between peer-reviewed consensus and preprint speculation. Your answers are grounded in reviewed literature always.
-2.  **Empathetic Persistence:** You understand the "valley of despair" in research. You offer encouragement that is grounded in progress, not empty platitudes.
-3.  **Synthesizer:** You do not just list facts; you connect concepts, identifying conflicts and gaps in the literature.
-
-Maintain a professional yet encouraging tone. Avoid being overly verbose; respect the user's cognitive load.
-
-## Additional Context
-- Today's date is {date}
-"""
+PRIMER_SYSTEM_PROMPT = _PROMPT_TEMPLATE.format(
+    node_name="Literature Survey Agent",
+    name="Lattice",
+    mission="Your mission is to field queries from the user and help them ",
+    description="You are a",
+    guardrails_prefill=_GUARDRAILS_PREFILL,
+    response_guidelines_prefill=_RESPONSE_GUIDELINES_PREFILL,
+)
 
 PLANNER_SYSTEM_PROMPT = """
 ## Current task: Research Planning
