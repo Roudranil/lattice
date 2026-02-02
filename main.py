@@ -16,11 +16,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
-from src.prompts.system import (
-    DOMAIN_SPECIFIC_PROMPT,
-    PLANNER_SYSTEM_PROMPT,
-    PRIMER_SYSTEM_PROMPT,
-)
+from src.prompts.system import PRIMER_SYSTEM_PROMPT
 from src.settings import get_settings
 from src.utils.logger import create_logger
 from src.utils.printer import ChatPrinter
@@ -36,14 +32,8 @@ logger.debug(f"settings loaded as \n{settings.model_dump_json(indent=2)}")
 printer = ChatPrinter()
 
 # load the system prompt
-SYSTEM_PROMPT = (
-    PRIMER_SYSTEM_PROMPT.format(
-        date=datetime.datetime.now().strftime("%B %Y"), version="0.0.1-alplpha"
-    )
-    # + "\n"
-    # + PLANNER_SYSTEM_PROMPT
-    # + "\n"
-    # + DOMAIN_SPECIFIC_PROMPT
+SYSTEM_PROMPT = PRIMER_SYSTEM_PROMPT.format(
+    date=datetime.datetime.now().strftime("%B %Y"), version="0.0.1-alpha"
 )
 
 # initialise the model
