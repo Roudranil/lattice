@@ -59,12 +59,14 @@ class PathSettings(BaseSettings):
 
 
 class HfModelSettings(BaseSettings):
-    chat: str = "meta-llama/Llama-3.1-8B-Instruct"
+    chat: str = "EssentialAI/rnj-1-instruct:together"  # some weird model with both struc and tool
     embedding_snowflake: str = "Snowflake/snowflake-arctic-embed-l-v2.0"
     embedding_specter: str = "allenai/specter2_base"
     _embedding_specter_adapter: str = "allenai/specter2"
     encoder: str = "m3rg-iitd/matscibert"
     reranker: str = "Qwen/Qwen3-Reranker-0.6B"
+    # for gpt-oss-20b, hyperbolic is the cheapest provider and also provides function calling
+    router: str = "openai/gpt-oss-20b:together"
 
 
 class NebiusModelSettings(BaseSettings):
@@ -72,6 +74,7 @@ class NebiusModelSettings(BaseSettings):
     tool_user: str = "Qwen/Qwen3-30B-A3B-Instruct-2507"
     chat: str = "meta-llama/Meta-Llama-3.1-8B-Instruct-fast"
     embedding_baai_bge: str = "BAAI/bge-multilingual-gemma2"
+    router: str = "openai/gpt-oss-20b"
 
 
 class ModelSettings(BaseSettings):
