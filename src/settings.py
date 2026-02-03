@@ -59,7 +59,8 @@ class PathSettings(BaseSettings):
 
 
 class HfModelSettings(BaseSettings):
-    chat: str = "EssentialAI/rnj-1-instruct:together"  # some weird model with both struc and tool
+    chat: str = "meta-llama/Llama-3.2-3B-Instruct:together"
+    structured_output: str = "Qwen/Qwen3-Coder-30B-A3B-Instruct:ovhcloud"
     embedding_snowflake: str = "Snowflake/snowflake-arctic-embed-l-v2.0"
     embedding_specter: str = "allenai/specter2_base"
     _embedding_specter_adapter: str = "allenai/specter2"
