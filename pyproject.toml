@@ -5,6 +5,7 @@ description = "A physics research agent."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "catppuccin>=2.5.0",
     "deepagents>=0.3.8",
     "jupyter>=1.1.1",
     "langchain-openai>=1.1.7",
