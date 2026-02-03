@@ -48,7 +48,7 @@ def create_logger(
 
     fmt = format or (
         "<white><dim>{time:%I:%M %p}</dim></white> | "
-        "<white><dim>{name:<8}</dim></white> | "
+        "<white><dim>{module:<10}.L:{line:<3}</dim></white> | "
         "<level>{level:<9}</level> | <level>{message}</level>"
     )
 
