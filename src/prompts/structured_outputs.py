@@ -4,9 +4,6 @@ RESEARCH_PLAN_STRUCTURED_OUTPUT_EXTRACTOR = """
 - Role: Research Plan Structured Output Extractor
 - Description: You are an assistant who specialises in extracting the research plan in a structured format according to the provided <SCHEMA>.
 
-## SCHEMA
-{schema}
-
 ## EXAMPLE
 Below is an example of how the file would like in markdown:
 {example}

@@ -60,6 +60,7 @@ class PathSettings(BaseSettings):
 
 class HfModelSettings(BaseSettings):
     chat: str = "meta-llama/Llama-3.2-3B-Instruct:together"
+    reasoning: str = "zai-org/GLM-4.7-Flash:novita"
     structured_output: str = "Qwen/Qwen3-Coder-30B-A3B-Instruct:ovhcloud"
     embedding_snowflake: str = "Snowflake/snowflake-arctic-embed-l-v2.0"
     embedding_specter: str = "allenai/specter2_base"
