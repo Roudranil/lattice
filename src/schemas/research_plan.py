@@ -4,6 +4,11 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from pydantic.json_schema import SkipJsonSchema
 
+__all__ = [
+    "ResearchPlan",
+    "RESEARCH_PLAN_TEMPLATE",
+]
+
 
 class ResearchQuestion(BaseModel):
     question_text: str = Field(default_factory=str)
