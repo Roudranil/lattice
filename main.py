@@ -17,7 +17,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
 from src.prompts.system import PRIMER_SYSTEM_PROMPT
-from src.settings import get_settings
+from src.config.settings import get_settings
 from src.utils.logger import create_logger
 from src.utils.printer import ChatPrinter
 
