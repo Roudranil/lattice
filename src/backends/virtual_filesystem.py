@@ -11,35 +11,27 @@ warnings.simplefilter("ignore", category=UserWarning)
 
 # now we can import fs without seeing these warnings
 import re
-from functools import wraps
-from typing import Any, Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from fs import path as fs_path
-from fs.errors import FSError
 from fs.memoryfs import MemoryFS
-from pydantic import BaseModel, Field
 
-from src.schemas.virtual_filesystem import FileContent, FSResponse, Info
-
-
-def fs_response_wrapper(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        try:
-            result = func(self, *args, **kwargs)
-            return FSResponse(status="ok", error=None, response=result).model_dump()
-        except FSError as e:
-            return FSResponse(status="error", error=str(e), response=None).model_dump()
-        except Exception as e:
-            return FSResponse(status="error", error=str(e), response=None).model_dump()
-
-    return wrapper
+from src.schemas.virtual_filesystem import FileContent, Info
 
 
 class VirtualFilesystem:
     def __init__(self):
+        """
+        Instantiates a virtual filesystem backend with public methods that can be exposed as tools
+        """
         self.fs = MemoryFS()
         self.cwd = "/"
+
+        # create some pre-existing directories that the agent can use
+        # /memories -> for memories in the current thread
+        # /artifacts -> in case there are any references to any artifacts
+        self.fs.makedirs("/memories")
+        self.fs.makedirs("/artifacts")
 
     def _resolve(self, path: str) -> str:
         """Resolve a path to an absolute normalized path.
@@ -132,7 +124,7 @@ class VirtualFilesystem:
             else:
                 self.fs.writetext(resolved, content)
 
-        return True
+        return self.info(resolved)
 
     def mkdir(self, path: str) -> bool:
         """Create a directory, including any necessary parent directories.
@@ -147,7 +139,7 @@ class VirtualFilesystem:
             FSError: If directory already exists or path is invalid.
         """
         self.fs.makedirs(self._resolve(path))
-        return True
+        return self.info(self._resolve(path))
 
     def read(
         self, path: str, start: Optional[int] = None, end: Optional[int] = None
@@ -252,6 +244,7 @@ class VirtualFilesystem:
                         "snippet": snippet,
                         "line_number": row,
                         "match_range": [match_start, match_end],
+                        "match": match.group(0),
                     }
                 )
         return results

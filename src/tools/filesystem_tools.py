@@ -55,6 +55,14 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         Returns:
             Dict: FSResponse with 'status', 'error', and 'response' containing
                   'name', 'path', and 'type' (file/directory).
+
+        Examples:
+        ```
+        input:
+            {"path": "/"}
+        output:
+            {'status': 'ok', 'error': None, 'response': {'name': '', 'path': '/', 'type': 'directory'}}
+        ```
         """
         return _wrap_response(vfs.info)(path)
 
@@ -67,6 +75,21 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
 
         Returns:
             Dict: FSResponse with list of info dicts for each item.
+
+        Examples:
+        ```
+        input:
+            {"path": "/"}
+        output:
+            {
+                'status': 'ok',
+                'error': None,
+                'response': [
+                    {'name': 'memories', 'path': '/memories', 'type': 'directory'},
+                    {'name': 'artifacts', 'path': '/artifacts', 'type': 'directory'}
+                ]
+            }
+        ```
         """
         return _wrap_response(vfs.ls)(path)
 
@@ -87,7 +110,19 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             mode (Literal["append", "overwrite"]): 'append' adds to end, 'overwrite' replaces.
 
         Returns:
-            Dict: FSResponse with True on success.
+            Dict: FSResponse with info on success.
+
+        Examples:
+        ```
+        input:
+            {"path": "/RESEARCH_PLAN.md", "content": "# Research plan", "mode": "overwrite"}
+        output:
+            {
+                'status': 'ok',
+                'error': None,
+                'response': {'name': 'RESEARCH_PLAN.md', 'path': '/RESEARCH_PLAN.md', 'type': 'file'}
+            }
+        ```
         """
         return _wrap_response(vfs.write)(path, content, mode)
 
@@ -99,7 +134,14 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             path (str): Path to the directory to create.
 
         Returns:
-            Dict: FSResponse with True on success.
+            Dict: FSResponse with info on success.
+
+        Examples:
+        ```
+        input:
+            {"path": "/artifacts/notes/"}
+        output:
+            {'status': 'ok', 'error': None, 'response': {'name': 'notes', 'path': '/artifacts/notes', 'type': 'directory'}}
         """
         return _wrap_response(vfs.mkdir)(path)
 
@@ -120,6 +162,21 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
 
         Returns:
             Dict: FSResponse with 'info', 'start', 'end', and 'content'.
+
+        Examples:
+        ```
+        output:
+            {
+                'status': 'ok',
+                'error': None,
+                'response': {
+                    'info': {'name': 'note.md', 'path': '/artifacts/notes/note.md', 'type': 'file'},
+                    'start': 0,
+                    'end': 1,
+                    'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit'
+                }
+            }
+        ```
         """
         return _wrap_response(vfs.read)(path, start, end)
 
@@ -135,6 +192,21 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
 
         Returns:
             Dict: FSResponse with list of matching file/directory info dicts.
+
+        Examples:
+        ```
+        input:
+            {"pattern": "**/*note*"}
+        output:
+            {
+                'status': 'ok',
+                'error': None,
+                'response': [
+                    {'name': 'mynote2.py', 'path': '/artifacts/mynote2.py', 'type': 'file'},
+                    {'name': 'note.md', 'path': '/artifacts/notes/note.md', 'type': 'file'},
+                    {'name': 'mynote.md', 'path': '/artifacts/notes/mynote.md', 'type': 'file'}
+                ]
+            }
         """
         return _wrap_response(vfs.glob)(pattern)
 
@@ -153,7 +225,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         When path is a file, file_name_pattern is ignored.
 
         Args:
-            grep_pattern (str): Regex pattern to search for.
+            grep_pattern (str): Regex pattern to search for. Does not support grepping across lines. Only patterns that grep in a single line will work.
             path (str): Path to file or directory to search.
             file_name_pattern (Optional[str]): Glob pattern to filter files in directories.
             character_window (Optional[int]): Characters of context around match.
@@ -161,8 +233,28 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             ignore_case (bool): Case-insensitive matching. Defaults to False.
 
         Returns:
-            Dict: FSResponse with list of matches containing 'path', 'snippet',
-                  'line_number', 'match_range'.
+            Dict: FSResponse with list of matches containing
+            path (str): path to the matched file
+            snippet (str): the matched snippet including windows
+            line_number (str): the line number where the match was found
+            match_range (list): list[start, end] to denote the indices on that line where the match was found.
+            match (Optional[str]): the exact string matched (without windows)
+
+        Examples:
+        ```
+        input:
+            {"path": "/", "grep_pattern": "ipsum", "character_window": 2}
+        output:
+            {
+                'status': 'ok',
+                'error': None,
+                'response': [
+                    {'path': '/artifacts/mynote2.py', 'snippet': 'm ipsum d', 'line_number': 0, 'match_range': [6, 11]},
+                    {'path': '/artifacts/mynote2.py', 'snippet': 'ipsum d', 'line_number': 1, 'match_range': [0, 5]},
+                    {'path': '/artifacts/notes/note.md', 'snippet': 'm ipsum d', 'line_number': 0, 'match_range': [6, 11]}
+                ]
+            }
+        ```
         """
         return _wrap_response(vfs.grep)(
             grep_pattern,
