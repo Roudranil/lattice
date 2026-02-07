@@ -8,6 +8,7 @@ dependencies = [
     "catppuccin>=2.5.0",
     "deepagents>=0.3.8",
     "fastapi>=0.128.0",
+    "fs>=2.4.16",
     "jupyter>=1.1.1",
     "langchain-openai>=1.1.7",
     "langchain-tavily>=0.2.17",
