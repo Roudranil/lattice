@@ -1,15 +1,26 @@
-# API Test Documentation
+# Test Documentation
 
-Test suite for the Lattice API located in `tests/test_api.py`.
+Test suites for the Lattice project:
+- **API Tests**: `tests/test_api.py` (14 tests)
+- **VirtualFilesystem Tests**: `tests/test_virtual_filesystem.py` (43 tests)
 
 ## Running Tests
 
 ```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Run API tests only
 uv run pytest tests/test_api.py -v
+
+# Run VirtualFilesystem tests only
+uv run pytest tests/test_virtual_filesystem.py -v
 ```
 
 
 ## Test Structure
+
+### API Tests (14 tests)
 
 | Class | Tests | Description |
 |-------|-------|-------------|
@@ -19,7 +30,19 @@ uv run pytest tests/test_api.py -v
 | `TestThreadRuns` | 3 | Thread run execution |
 | `TestThreadState` | 2 | Thread state retrieval |
 
-**Total: 14 tests**
+
+### VirtualFilesystem Tests (43 tests)
+
+| Class | Tests | Description |
+|-------|-------|-------------|
+| `TestResolve` | 4 | Path resolution |
+| `TestInfo` | 4 | File/directory metadata |
+| `TestLs` | 4 | Directory listing |
+| `TestWrite` | 6 | File writing and creation |
+| `TestMkdir` | 3 | Directory creation |
+| `TestRead` | 7 | File reading with ranges |
+| `TestGlob` | 3 | Glob pattern matching |
+| `TestGrep` | 12 | Regex search in files |
 
 
 ## Test Details
@@ -75,12 +98,23 @@ Mocks `invoke_agent` and `get_thread_state` to avoid:
 - Making real API calls
 - Non-deterministic tests
 
+### `vfs`
+Fresh `VirtualFilesystem` instance for each test.
+
 
 ## Adding Tests
 
 ```python
+# API test example
 class TestNewFeature:
     def test_something(self, client, mock_agent_service):
         r = client.post("/new-endpoint", json={...})
         assert r.status_code == 200
+
+# VirtualFilesystem test example
+class TestNewMethod:
+    def test_something(self, vfs):
+        vfs.write("/file.txt", "content")
+        result = vfs.read("/file.txt")
+        assert result["content"] == "content"
 ```
