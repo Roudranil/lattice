@@ -7,9 +7,12 @@ requires-python = ">=3.11"
 dependencies = [
     "catppuccin>=2.5.0",
     "deepagents>=0.3.8",
+    "docstring-parser>=0.17.0",
     "fastapi>=0.128.0",
     "fs>=2.4.16",
     "jupyter>=1.1.1",
+    "langchain-huggingface>=1.2.0",
+    "langchain-nebius>=0.1.3",
     "langchain-openai>=1.1.7",
     "langchain-tavily>=0.2.17",
     "langgraph>=1.0.7",
