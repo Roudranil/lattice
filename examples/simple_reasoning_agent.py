@@ -5,6 +5,7 @@
 # %%
 import sys
 from datetime import datetime
+from pathlib import Path
 
 from catppuccin.extras.rich_ctp import mocha
 from rich import pretty
@@ -13,8 +14,11 @@ from rich.pretty import pprint
 
 pretty.install()
 
-if ".." not in sys.path:
-    sys.path.insert(0, "..")
+
+parent_dir = Path(__file__).resolve().parent.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from src.config.settings import get_settings
 from src.utils.logger import ChatPrinter, create_logger
@@ -249,33 +253,27 @@ agent = graph.compile()
 
 # %%
 msg = """
-🧩 The Three Boxes and Two Truths Puzzle
+🧩 The Two Doors Riddle
 
-You are presented with three sealed boxes labeled:
+You are standing in front of two closed doors.
 
-    Box 1
-    Box 2
-    Box 3
+One door leads to treasure.
+The other door leads to danger.
 
-Exactly ONE of the boxes contains a treasure. The other two are empty.
+There are two guards:
 
-Each box has a statement written on it:
+• One guard always tells the truth.
+• One guard always lies.
 
-Box 1 says:
-    "The treasure is in this box."
+You do NOT know which guard is which.
+Each guard stands in front of one door.
 
-Box 2 says:
-    "The treasure is not in Box 1."
+You are allowed to ask ONLY ONE yes/no question to ONLY ONE guard.
 
-Box 3 says:
-    "The treasure is not in this box."
-
-You are told that:
-    • Exactly TWO of the statements are TRUE
-    • Exactly ONE statement is FALSE
+After asking the question, you must choose a door.
 
 Question:
-Which box contains the treasure?
+What question should you ask to guarantee choosing the treasure door?
 
 (hint: use the think_tool to think and critique your answer. Use it maximum of 10 times.)"""
 printer.user(msg)
