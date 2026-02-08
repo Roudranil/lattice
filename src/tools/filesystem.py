@@ -16,10 +16,10 @@ Usage:
 
 from typing import Dict, List, Literal, Optional
 
-from langchain_core.tools import tool
-
 from src.backends.virtual_filesystem import VirtualFilesystem
 from src.schemas.virtual_filesystem import FSResponse
+
+from .utils import tool_with_auto_doc
 
 
 def _wrap_response(func):
@@ -45,7 +45,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         List: List of LangChain tool functions.
     """
 
-    @tool
+    @tool_with_auto_doc
     def fs_info(path: str = "/") -> Dict:
         """Get metadata information about a file or directory.
 
@@ -53,8 +53,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             path (str): Path to the file or directory. Defaults to root "/".
 
         Returns:
-            Dict: FSResponse with 'status', 'error', and 'response' containing
-                  'name', 'path', and 'type' (file/directory).
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a info dict with the below keys on success:
+            name (str): name of the file
+            path (str): absolute path to the file
+            type (str): file or directory
 
         Examples:
         ```
@@ -66,7 +69,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.info)(path)
 
-    @tool
+    @tool_with_auto_doc
     def fs_ls(path: str = "/") -> Dict:
         """List contents of a directory.
 
@@ -74,7 +77,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             path (str): Path to the directory. Defaults to root "/".
 
         Returns:
-            Dict: FSResponse with list of info dicts for each item.
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a list of info dicts with the below keys for each file:
+            name (str): name of the file
+            path (str): absolute path to the file
+            type (str): file or directory
 
         Examples:
         ```
@@ -93,7 +100,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.ls)(path)
 
-    @tool
+    @tool_with_auto_doc
     def fs_write(
         path: str,
         content: Optional[str] = None,
@@ -110,7 +117,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             mode (Literal["append", "overwrite"]): 'append' adds to end, 'overwrite' replaces.
 
         Returns:
-            Dict: FSResponse with info on success.
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a info dict with the below keys on success:
+            name (str): name of the file
+            path (str): absolute path to the file
+            type (str): file or directory
 
         Examples:
         ```
@@ -126,7 +137,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.write)(path, content, mode)
 
-    @tool
+    @tool_with_auto_doc
     def fs_mkdir(path: str) -> Dict:
         """Create a directory, including any necessary parent directories.
 
@@ -134,7 +145,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             path (str): Path to the directory to create.
 
         Returns:
-            Dict: FSResponse with info on success.
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a info dict with the below keys on success:
+            name (str): name of the file
+            path (str): absolute path to the file
+            type (str): file or directory
 
         Examples:
         ```
@@ -145,7 +160,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.mkdir)(path)
 
-    @tool
+    @tool_with_auto_doc
     def fs_read(
         path: str,
         start: Optional[int] = None,
@@ -161,7 +176,8 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             end (Optional[int]): Ending line index (0-indexed, exclusive).
 
         Returns:
-            Dict: FSResponse with 'info', 'start', 'end', and 'content'.
+            Dict: dict with the keys "status", "error" and "response".
+            "response" contains the following keys: 'info' dict, 'start', 'end', and 'content'.
 
         Examples:
         ```
@@ -180,7 +196,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.read)(path, start, end)
 
-    @tool
+    @tool_with_auto_doc
     def fs_glob(pattern: str) -> Dict:
         """Find files matching a glob pattern.
 
@@ -191,7 +207,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             pattern (str): Glob pattern (e.g., '*.py', 'dir/**/*.txt').
 
         Returns:
-            Dict: FSResponse with list of matching file/directory info dicts.
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a list of info dicts with the below keys:
+            name (str): name of the file
+            path (str): absolute path to the file
+            type (str): file or directory
 
         Examples:
         ```
@@ -210,7 +230,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.glob)(pattern)
 
-    @tool
+    @tool_with_auto_doc
     def fs_grep(
         grep_pattern: str,
         path: str,
@@ -233,7 +253,8 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             ignore_case (bool): Case-insensitive matching. Defaults to False.
 
         Returns:
-            Dict: FSResponse with list of matches containing
+            Dict: dict with the keys "status", "error" and "response".
+            "response" is a list of dicts with the below keys:
             path (str): path to the matched file
             snippet (str): the matched snippet including windows
             line_number (str): the line number where the match was found
