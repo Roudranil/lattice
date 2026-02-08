@@ -72,7 +72,7 @@ class HfModelSettings(BaseSettings):
 
 
 class NebiusModelSettings(BaseSettings):
-    reasoning: str = "zai-org/GLM-4.5-Air"
+    reasoning: str = "deepseek-ai/DeepSeek-V3.2"
     tool_user: str = "Qwen/Qwen3-30B-A3B-Instruct-2507"
     chat: str = "meta-llama/Meta-Llama-3.1-8B-Instruct-fast"
     embedding_baai_bge: str = "BAAI/bge-multilingual-gemma2"
