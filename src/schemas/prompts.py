@@ -1,5 +1,6 @@
 import re
-from typing import Optional
+from datetime import datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -9,7 +10,7 @@ class SystemPromptTemplate(BaseModel):
     name: str
     node_name: str
     description: str
-    mission: Optional[str] = None
+    mode: Literal["ask", "planning", "execution"] = "ask"
     version: Optional[str] = None
     date: Optional[str] = None
     # assign default traits of helpful and friendly
@@ -49,13 +50,16 @@ class SystemPromptTemplate(BaseModel):
             f"- NAME: {self.name}\n"
             f"- ROLE: {self.node_name}\n"
             f"- DESCRIPTION: {self.description}\n"
+            f"- MODE: {self.mode.upper()}\n"
         )
-        if self._has_text(self.mission):
-            md += f"- MISSION: {self.mission}\n"
         if self._has_text(self.version):
             md += f"- VERSION: {self.version}\n"
-        if self._has_text(self.date):
-            md += f"- DATE: {self.date}\n"
+        # if the date is provided use that
+        # or else, when the markdown is being generated
+        # automatically calculate the date and assign that
+        if not self._has_text(self.date):
+            self.date = datetime.now().strftime("%B %Y")
+        md += f"- DATE: {self.date}\n"
         if self._has_text(self.traits):
             md += f"\n## TRAITS\n{self.traits}\n"
         if self._has_text(self.tools):

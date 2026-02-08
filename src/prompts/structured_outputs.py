@@ -1,6 +1,6 @@
 from ..schemas.prompts import SystemPromptTemplate
 
-RESEARCH_PLAN_STRUCTURED_OUTPUT_EXTRACTOR = SystemPromptTemplate(
+planning_structured_output = SystemPromptTemplate(
     name="Assistant",
     node_name="Research Plan Structured Output Extractor",
     description="You are an assistant who specialises in extracting the research plan in a structured format according to the schema provided in <EXPECTED OUTPUTS> and <SCHEMA>.",
