@@ -128,7 +128,7 @@ def wrap_tool_with_error_handling(func):
     return wrapped
 
 
-def wrap_tool_with_auto_doc(func):
+def wrap_tool_with_doc_and_error_handling(func):
     raw_doc = inspect.getdoc(func) or ""
     doc = parse(raw_doc)
 

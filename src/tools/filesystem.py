@@ -19,7 +19,7 @@ from typing import Dict, List, Literal, Optional
 from src.backends.virtual_filesystem import VirtualFilesystem
 from src.schemas.virtual_filesystem import FSResponse
 
-from .utils import tool_with_auto_doc
+from .utils import wrap_tool_with_doc_and_error_handling
 
 
 def _wrap_response(func):
@@ -45,7 +45,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         List: List of LangChain tool functions.
     """
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_info(path: str = "/") -> Dict:
         """Get metadata information about a file or directory.
 
@@ -69,7 +69,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.info)(path)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_ls(path: str = "/") -> Dict:
         """List contents of a directory.
 
@@ -100,7 +100,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.ls)(path)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_write(
         path: str,
         content: Optional[str] = None,
@@ -137,7 +137,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.write)(path, content, mode)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_mkdir(path: str) -> Dict:
         """Create a directory, including any necessary parent directories.
 
@@ -160,7 +160,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.mkdir)(path)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_read(
         path: str,
         start: Optional[int] = None,
@@ -196,7 +196,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.read)(path, start, end)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_glob(pattern: str) -> Dict:
         """Find files matching a glob pattern.
 
@@ -230,7 +230,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         """
         return _wrap_response(vfs.glob)(pattern)
 
-    @tool_with_auto_doc
+    @wrap_tool_with_doc_and_error_handling
     def fs_grep(
         grep_pattern: str,
         path: str,
