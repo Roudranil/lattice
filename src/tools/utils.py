@@ -1,11 +1,26 @@
+import ast
 import builtins
 import inspect
 import typing
+from functools import wraps
 from typing import Annotated, Any, TypeVar, get_args, get_origin
 
 from docstring_parser import parse
 from langchain.tools import tool
 from pydantic import ConfigDict, Field, create_model
+
+_ALLOWED_NAMES = {
+    **vars(typing),
+    **vars(builtins),
+}
+_ALLOWED_NAMES.update(
+    {
+        "List": typing.List,
+        "Dict": typing.Dict,
+        "Tuple": typing.Tuple,
+        "Set": typing.Set,
+    }
+)
 
 T = TypeVar("T")
 
@@ -33,18 +48,46 @@ def _unwrap_skip_schema(annotation):
     return annotation
 
 
-def _safe_eval_type(type_name: str):
-    """Best effort conversion from docstring type string → python type."""
+def _safe_eval_type(type_name: str) -> Any:
+    """Safely convert docstring type string → Python type."""
+
     if not type_name:
         return Any
 
-    if hasattr(builtins, type_name):
-        return getattr(builtins, type_name)
-
     try:
-        return eval(type_name, vars(typing))
+        node = ast.parse(type_name, mode="eval").body
+        return _resolve_ast_node(node)
     except Exception:
         return Any
+
+
+def _resolve_ast_node(node):
+    if isinstance(node, ast.Name):
+        return _resolve_name(node.id)
+
+    if isinstance(node, ast.Subscript):
+        base = _resolve_ast_node(node.value)
+        args = _resolve_subscript(node.slice)
+        return base[args]
+
+    if isinstance(node, ast.Tuple):
+        return tuple(_resolve_ast_node(el) for el in node.elts)
+
+    raise ValueError("Unsupported type expression")
+
+
+def _resolve_subscript(slice_node):
+    if isinstance(slice_node, ast.Tuple):
+        return tuple(_resolve_ast_node(el) for el in slice_node.elts)
+
+    return _resolve_ast_node(slice_node)
+
+
+def _resolve_name(name):
+    if name in _ALLOWED_NAMES:
+        return _ALLOWED_NAMES[name]
+
+    raise ValueError(f"Unsupported type name: {name}")
 
 
 def _is_optional(annotation):
@@ -64,7 +107,28 @@ def _merge_docstring(doc):
     return "\n\n".join(parts).strip()
 
 
-def tool_with_auto_doc(func):
+def wrap_tool_with_error_handling(func):
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                return f"Error: {e}"
+    else:
+
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                return f"Error: {e}"
+
+    return wrapped
+
+
+def wrap_tool_with_auto_doc(func):
     raw_doc = inspect.getdoc(func) or ""
     doc = parse(raw_doc)
 
@@ -91,7 +155,7 @@ def tool_with_auto_doc(func):
 
         # what if there are default values
         default = ...
-        if param.default is not inspect._empty:
+        if param.default is not inspect.Parameter.empty:
             default = param.default
 
         # infer optionals
@@ -108,19 +172,13 @@ def tool_with_auto_doc(func):
     args_schema = create_model(
         f"{func.__name__}",
         __doc__=tool_description,
-        __config__={
-            "json_schema_extra": {
-                "description": tool_description,
-                # "returns": return_description,
-            }
-        },
         **fields,
     )
     args_schema.model_config = ConfigDict(
         json_schema_extra={"description": tool_description}
     )
     return tool(
-        func,
+        wrap_tool_with_error_handling(func),
         args_schema=args_schema,
         description=tool_description,
     )
