@@ -64,7 +64,7 @@ from src.prompts import (
 from src.schemas import RESEARCH_PLAN_TEMPLATE, ResearchPlan
 from src.schemas.prompts import SystemPromptTemplate
 from src.tools.filesystem import create_filesystem_tools
-from src.tools.utils import SkipSchema, tool_with_auto_doc
+from src.tools.utils import SkipSchema, wrap_tool_with_doc_and_error_handling
 from src.utils.stats import accumulate_usage, add_usage_metadata
 
 version = "0.0.1-alpha"
@@ -149,7 +149,7 @@ chat_llm = ChatOpenAI(
 
 
 # %%
-@tool_with_auto_doc
+@wrap_tool_with_doc_and_error_handling
 def think_tool(reflection: str, state: SkipSchema[Dict] = None) -> str:
     """Strategic reflection and thinking tool. Use this tool to reflect on the conversation so far and what you should do next. Ask questions such as:
     - What does the user want me to do next?
