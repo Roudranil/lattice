@@ -49,7 +49,6 @@ class SystemPromptTemplate(BaseModel):
             f"\n## PROFILE\n"
             f"- NAME: {self.name}\n"
             f"- ROLE: {self.node_name}\n"
-            f"- DESCRIPTION: {self.description}\n"
             f"- MODE: {self.mode.upper()}\n"
         )
         if self._has_text(self.version):
@@ -60,6 +59,7 @@ class SystemPromptTemplate(BaseModel):
         if not self._has_text(self.date):
             self.date = datetime.now().strftime("%B %Y")
         md += f"- DATE: {self.date}\n"
+        md += f"- DESCRIPTION: {self.description}\n"
         if self._has_text(self.traits):
             md += f"\n## TRAITS\n{self.traits}\n"
         if self._has_text(self.tools):
