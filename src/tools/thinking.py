@@ -18,3 +18,48 @@ def think_tool(reflection: str, state: SkipSchema[Dict] = None) -> str:
         str: Confirmation that reflection was recorded for decision making
     """
     return f"Reflection recorded: {reflection}"
+
+
+@wrap_tool_with_doc_and_error_handling
+def switch_to_ask_mode_tool(switch: bool) -> bool:
+    """This tool should be used to communicate that you want to switch to ASK mode.
+
+    Args:
+        switch (bool): Your boolean decision to switch
+
+    Returns:
+        bool: Confirmation that your decision was recorded
+    """
+    # does not really matter what this tool returns.
+    # all it matters is that we intercept this.
+    return switch
+
+
+@wrap_tool_with_doc_and_error_handling
+def switch_to_planning_mode_tool(switch: bool) -> bool:
+    """This tool should be used to communicate that you want to switch to PLANNING mode.
+
+    Args:
+        switch (bool): Your boolean decision to switch
+
+    Returns:
+        bool: Confirmation that your decision was recorded
+    """
+    # does not really matter what this tool returns.
+    # all it matters is that we intercept this.
+    return switch
+
+
+@wrap_tool_with_doc_and_error_handling
+def switch_to_execution_mode_tool(switch: bool) -> bool:
+    """This tool should be used to communicate that you want to switch to EXECUTION mode.
+
+    Args:
+        switch (bool): Your boolean decision to switch
+
+    Returns:
+        bool: Confirmation that your decision was recorded
+    """
+    # does not really matter what this tool returns.
+    # all it matters is that we intercept this.
+    return switch
