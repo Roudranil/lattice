@@ -22,19 +22,6 @@ from src.schemas.virtual_filesystem import FSResponse
 from .utils import wrap_tool_with_doc_and_error_handling
 
 
-def _wrap_response(func):
-    """Wrap function result in FSResponse structure."""
-
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            return FSResponse(status="ok", error=None, response=result).model_dump()
-        except Exception as e:
-            return FSResponse(status="error", error=str(e), response=None).model_dump()
-
-    return wrapper
-
-
 def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
     """Create LangChain tools bound to a VirtualFilesystem instance.
 
@@ -67,7 +54,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             {'status': 'ok', 'error': None, 'response': {'name': '', 'path': '/', 'type': 'directory'}}
         ```
         """
-        return _wrap_response(vfs.info)(path)
+        return vfs.info(path)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_ls(path: str = "/") -> Dict:
@@ -98,7 +85,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             }
         ```
         """
-        return _wrap_response(vfs.ls)(path)
+        return vfs.ls(path)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_write(
@@ -135,7 +122,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             }
         ```
         """
-        return _wrap_response(vfs.write)(path, content, mode)
+        return vfs.write(path, content, mode)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_mkdir(path: str) -> Dict:
@@ -158,7 +145,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         output:
             {'status': 'ok', 'error': None, 'response': {'name': 'notes', 'path': '/artifacts/notes', 'type': 'directory'}}
         """
-        return _wrap_response(vfs.mkdir)(path)
+        return vfs.mkdir(path)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_read(
@@ -194,7 +181,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             }
         ```
         """
-        return _wrap_response(vfs.read)(path, start, end)
+        return vfs.read(path, start, end)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_glob(pattern: str) -> Dict:
@@ -228,7 +215,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
                 ]
             }
         """
-        return _wrap_response(vfs.glob)(pattern)
+        return vfs.glob(pattern)
 
     @wrap_tool_with_doc_and_error_handling
     def fs_grep(
@@ -277,7 +264,7 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             }
         ```
         """
-        return _wrap_response(vfs.grep)(
+        return vfs.grep(
             grep_pattern,
             path,
             file_name_pattern,
