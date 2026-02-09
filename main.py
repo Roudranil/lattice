@@ -22,8 +22,7 @@ from langgraph.graph.message import add_messages
 
 from src.config.settings import get_settings
 from src.prompts.system import PRIMER_SYSTEM_PROMPT
-from src.utils.logger import create_logger
-from src.utils.printer import ChatPrinter
+from src.utils.logger import ChatPrinter, create_logger
 
 # grab the settings
 settings = get_settings()
