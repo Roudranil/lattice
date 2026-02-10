@@ -16,6 +16,10 @@ Usage:
 
 from typing import Dict, List, Literal, Optional
 
+from fs import path as fs_path
+from langchain.tools import ToolRuntime
+from langgraph.types import Command
+
 from src.backends.filesystem import VirtualFilesystem
 from src.schemas.filesystem import FSResponse
 
@@ -85,7 +89,11 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
             }
         ```
         """
-        return vfs.ls(path)
+        result = vfs.fs.listdir(vfs._resolve(path))
+        out = []
+        for r in result:
+            out.append(vfs.info(fs_path.join(vfs._resolve(path), r)))
+        return out
 
     @wrap_tool_with_doc_and_error_handling
     def fs_write(
@@ -145,7 +153,8 @@ def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
         output:
             {'status': 'ok', 'error': None, 'response': {'name': 'notes', 'path': '/artifacts/notes', 'type': 'directory'}}
         """
-        return vfs.mkdir(path)
+        vfs.fs.makedirs(vfs._resolve(path))
+        return vfs.info(vfs._resolve(path))
 
     @wrap_tool_with_doc_and_error_handling
     def fs_read(

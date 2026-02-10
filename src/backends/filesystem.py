@@ -33,6 +33,13 @@ class VirtualFilesystem:
         self.fs.makedirs("/memories")
         self.fs.makedirs("/artifacts")
 
+    def _format_bytes_to_human_readable(size: int) -> str:
+        """Convert bytes to human-readable format."""
+        for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
+            if size < 1024 or unit == "PB":
+                return f"{size:.2f} {unit}"
+            size /= 1024
+
     def _resolve(self, path: str) -> str:
         """Resolve a path to an absolute normalized path.
 
@@ -61,32 +68,14 @@ class VirtualFilesystem:
         Raises:
             FSError: If the path does not exist.
         """
-        info = self.fs.getinfo(self._resolve(path))
-        info = Info(
-            name=info.name,
-            type="directory" if info.is_dir else "file",
-            path=self._resolve(path),
-        )
-        return info.model_dump()
-
-    def ls(self, path: str = "/") -> List[Dict]:
-        """List contents of a directory.
-
-        Args:
-            path (str, optional): Path to the directory. Defaults to root "/".
-
-        Returns:
-            List[Dict]: List of info dictionaries for each item in the directory.
-            Each dict contains 'name', 'path', and 'type' keys.
-
-        Raises:
-            FSError: If the path does not exist or is not a directory.
-        """
-        result = self.fs.listdir(self._resolve(path))
-        out = []
-        for r in result:
-            out.append(self.info(fs_path.join(self._resolve(path), r)))
-        return out
+        resolved = self._resolve(path)
+        info = self.fs.getinfo(resolved)
+        return {
+            "name": info.name,
+            "type": "directory" if info.is_dir else "file",
+            "path": resolved,
+            "size": self._format_bytes_to_human_readable(self.fs.getsize(resolved)),
+        }
 
     def write(
         self,
@@ -125,21 +114,6 @@ class VirtualFilesystem:
                 self.fs.writetext(resolved, content)
 
         return self.info(resolved)
-
-    def mkdir(self, path: str) -> bool:
-        """Create a directory, including any necessary parent directories.
-
-        Args:
-            path (str): Path to the directory to create.
-
-        Returns:
-            bool: True on success.
-
-        Raises:
-            FSError: If directory already exists or path is invalid.
-        """
-        self.fs.makedirs(self._resolve(path))
-        return self.info(self._resolve(path))
 
     def read(
         self, path: str, start: Optional[int] = None, end: Optional[int] = None
