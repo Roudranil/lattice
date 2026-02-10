@@ -8,3 +8,5 @@ from .api import (
     ThreadState,
 )
 from .research_plan import RESEARCH_PLAN_TEMPLATE, ResearchPlan
+
+from .prompts import SystemPromptTemplate
