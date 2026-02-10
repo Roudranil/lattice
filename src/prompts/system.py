@@ -54,7 +54,7 @@ You are to fulfill ALL the responsibilities that come with YOUR <MODE>. Otherwis
     failure_protocol=GENERAL_FAILURE_PROTOCOL,
 )
 
-planning_mode_systemm_prompt = SystemPromptTemplate(
+planning_mode_system_prompt = SystemPromptTemplate(
     node_name="Literature Survey Planner Agent",
     name=NAME,
     mode="planning",
