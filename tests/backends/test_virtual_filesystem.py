@@ -9,7 +9,7 @@ Run with: uv run pytest tests/test_virtual_filesystem.py -v
 
 import pytest
 
-from src.backends.virtual_filesystem import VirtualFilesystem
+from src.backends.filesystem import VirtualFilesystem
 
 
 @pytest.fixture

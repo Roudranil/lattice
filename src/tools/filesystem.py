@@ -16,8 +16,8 @@ Usage:
 
 from typing import Dict, List, Literal, Optional
 
-from src.backends.virtual_filesystem import VirtualFilesystem
-from src.schemas.virtual_filesystem import FSResponse
+from src.backends.filesystem import VirtualFilesystem
+from src.schemas.filesystem import FSResponse
 
 from .utils import wrap_tool_with_doc_and_error_handling
 

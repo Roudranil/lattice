@@ -9,7 +9,7 @@ Run with: uv run pytest tests/tools/test_filesystem_tools.py -v
 
 import pytest
 
-from src.backends.virtual_filesystem import VirtualFilesystem
+from src.backends.filesystem import VirtualFilesystem
 from src.tools.filesystem import create_filesystem_tools
 
 

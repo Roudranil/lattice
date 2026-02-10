@@ -16,7 +16,7 @@ from typing import Dict, List, Literal, Optional
 from fs import path as fs_path
 from fs.memoryfs import MemoryFS
 
-from src.schemas.virtual_filesystem import FileContent, Info
+from src.schemas.filesystem import FileContent, Info
 
 
 class VirtualFilesystem:

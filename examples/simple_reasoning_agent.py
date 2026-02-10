@@ -56,7 +56,7 @@ from pydantic import BaseModel, Field, create_model
 from pydantic.json_schema import SkipJsonSchema
 
 # %%
-from src.backends.virtual_filesystem import VirtualFilesystem
+from src.backends.filesystem import VirtualFilesystem
 from src.prompts import (
     planning_mode_systemm_prompt,
     planning_structured_output,
