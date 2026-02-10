@@ -26,11 +26,11 @@ _ALLOWED_NAMES.update(
 T = TypeVar("T")
 
 
-class _SkipSchemaMarker:
+class SkipSchemaMarker:
     pass
 
 
-SkipSchema = Annotated[T, _SkipSchemaMarker]
+SkipSchema = Annotated[T, SkipSchemaMarker]
 
 _SKIP_SCHEMA_TYPES: Set[Type[Any]] = {
     SkipSchema,
@@ -39,27 +39,30 @@ _SKIP_SCHEMA_TYPES: Set[Type[Any]] = {
     InjectedStore,
     ToolRuntime,
 }
-_SKIP_SCHEMA_MARKERS: Set[Type[Any]] = {_SkipSchemaMarker}
+_SKIP_SCHEMA_MARKERS: Set[Type[Any]] = {SkipSchemaMarker}
 
 
 def _is_skip_schema(annotation: Any) -> bool:
     if annotation is None:
         return False
     origin = get_origin(annotation)
-    # handle cases where the match is in annotations
+    # --- Handle Annotated[T, ...] ---
     if origin is Annotated:
         base, *meta = get_args(annotation)
-        # check marker metadata
+        # Marker metadata check
         for m in meta:
             if isinstance(m, tuple(_SKIP_SCHEMA_MARKERS)) or m in _SKIP_SCHEMA_MARKERS:
                 return True
-        # recurse into base
+        # Recurse into base
         return _is_skip_schema(base)
-    # handle direct type match
+    # --- Handle typing generics safely ---
+    if origin is not None:
+        return _is_skip_schema(origin)
+    # --- Handle real classes ONLY ---
     if inspect.isclass(annotation):
-        return any(
-            issubclass(annotation, skip_type) for skip_type in _SKIP_SCHEMA_TYPES
-        )
+        for skip_type in _SKIP_SCHEMA_TYPES:
+            if inspect.isclass(skip_type) and issubclass(annotation, skip_type):
+                return True
     return False
 
 
@@ -138,6 +141,7 @@ def wrap_tool_with_error_handling(func):
                 return await func(*args, **kwargs)
             except Exception as e:
                 return f"Error: {e}"
+
     else:
 
         @wraps(func)
