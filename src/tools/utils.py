@@ -3,11 +3,12 @@ import builtins
 import inspect
 import typing
 from functools import wraps
-from typing import Annotated, Any, TypeVar, get_args, get_origin
+from typing import Annotated, Any, Set, Type, TypeVar, get_args, get_origin
 
 from docstring_parser import parse
-from langchain.tools import tool
+from langchain.tools import InjectedState, InjectedStore, ToolRuntime, tool
 from pydantic import ConfigDict, Field, create_model
+from pydantic.json_schema import SkipJsonSchema
 
 _ALLOWED_NAMES = {
     **vars(typing),
@@ -31,12 +32,33 @@ class _SkipSchemaMarker:
 
 SkipSchema = Annotated[T, _SkipSchemaMarker]
 
+_SKIP_SCHEMA_TYPES: Set[Type[Any]] = {
+    SkipSchema,
+    SkipJsonSchema,
+    InjectedState,
+    InjectedStore,
+    ToolRuntime,
+}
+_SKIP_SCHEMA_MARKERS: Set[Type[Any]] = {_SkipSchemaMarker}
 
-def _is_skip_schema(annotation):
-    if get_origin(annotation) is Annotated:
-        _, *meta = get_args(annotation)
+
+def _is_skip_schema(annotation: Any) -> bool:
+    if annotation is None:
+        return False
+    origin = get_origin(annotation)
+    # handle cases where the match is in annotations
+    if origin is Annotated:
+        base, *meta = get_args(annotation)
+        # check marker metadata
+        for m in meta:
+            if isinstance(m, tuple(_SKIP_SCHEMA_MARKERS)) or m in _SKIP_SCHEMA_MARKERS:
+                return True
+        # recurse into base
+        return _is_skip_schema(base)
+    # handle direct type match
+    if inspect.isclass(annotation):
         return any(
-            isinstance(m, _SkipSchemaMarker) or m is _SkipSchemaMarker for m in meta
+            issubclass(annotation, skip_type) for skip_type in _SKIP_SCHEMA_TYPES
         )
     return False
 
