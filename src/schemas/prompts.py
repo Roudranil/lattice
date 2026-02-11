@@ -19,6 +19,9 @@ class SystemPromptTemplate(BaseModel):
     )
     # for skills, tools and domain knowledge
     # until we assign something, the agent does not have anything there
+    filesystem: Optional[str] = Field(
+        default="None - You do not have access to any filesystem yet."
+    )
     skills: Optional[str] = Field(
         default="None - You do not have access to any skills yet."
     )
@@ -42,6 +45,13 @@ class SystemPromptTemplate(BaseModel):
     def _has_text(s: str | None) -> bool:
         return bool(s and s.strip())
 
+    def __getattribute__(self, name: str):
+        out = super().__getattribute__(name)
+        # Only auto-strip string values
+        if isinstance(out, str):
+            return out.strip()
+        return out
+
     def to_markdown(self):
         md = ""
         md += (
@@ -62,6 +72,8 @@ class SystemPromptTemplate(BaseModel):
         md += f"- DESCRIPTION: {self.description}\n"
         if self._has_text(self.traits):
             md += f"\n## TRAITS\n{self.traits}\n"
+        if self._has_text(self.filesystem):
+            md += f"\n## FILESYSTEM\n{self.filesystem}\n"
         if self._has_text(self.tools):
             md += f"\n## TOOLS\n{self.tools}\n"
         if self._has_text(self.skills):
