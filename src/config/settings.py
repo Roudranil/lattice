@@ -29,6 +29,7 @@ class PathSettings(BaseSettings):
     # agents_dir = "../agents/"
     # skills_dir = "../skills/"
     # tools_dir = "../tools/"
+    # agentfs_dir = "../.agentfs/"
 
     base_dir: Path = base_dir
 
@@ -56,6 +57,11 @@ class PathSettings(BaseSettings):
     @property
     def tools_dir(self) -> Path:
         return self.base_dir / "tools"
+
+    @computed_field
+    @property
+    def agentfs_dir(self) -> Path:
+        return self.base_dir / ".agentfs"
 
 
 class HfModelSettings(BaseSettings):
