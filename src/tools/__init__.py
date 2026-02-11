@@ -8,5 +8,5 @@ from .thinking import (
 from .utils import (
     SkipSchema,
     wrap_tool_with_doc_and_error_handling,
-    exclude_tool_from_middleware_by_name,
+    filter_tool_from_middleware_by_name,
 )

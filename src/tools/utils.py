@@ -5,6 +5,8 @@ import typing
 from functools import wraps
 from typing import Annotated, Any, Dict, List, Set, Type, TypeVar, get_args, get_origin
 
+from copy import deepcopy
+
 from docstring_parser import parse
 from langchain.agents.middleware import AgentMiddleware
 from langchain.tools import InjectedState, InjectedStore, ToolRuntime, tool
@@ -226,9 +228,10 @@ def wrap_tool_with_doc_and_error_handling(
     )
 
 
-def exclude_tool_from_middleware_by_name(
+def filter_tool_from_middleware_by_name(
     middleware: AgentMiddleware | List[AgentMiddleware],
-    tool_names: str | List[str] | Dict[str, List[str]],
+    include: str | List[str] | Dict[str, List[str]] = [],
+    exclude: str | List[str] | Dict[str, List[str]] = [],
 ) -> AgentMiddleware | List[AgentMiddleware]:
     """Exclude tools from one or more middlewares by name.
 
@@ -236,17 +239,20 @@ def exclude_tool_from_middleware_by_name(
     ----------
     middleware : AgentMiddleware | List[AgentMiddleware]
         The middleware or list of middleware to modify.
-    tool_names : str | List[str] | Dict[str, List[str]]
+    include : str | List[str] | Dict[str, List[str]]
+        The tool names to include in the middleware.
+    exclude : str | List[str] | Dict[str, List[str]]
         The tool names to exclude from the middleware.
 
     Returns
     -------
     AgentMiddleware | List[AgentMiddleware]
-        The modified middleware or list of middleware with the specified tools excluded.
+        The modified middleware or list of middleware with the specified tools excluded
+        or included based on the `include` flag.
     """
     # if the tool names have been provided as a dict
     # keys -> middleware names, values -> list of tool names to exclude from that middleware
-    if isinstance(tool_names, dict):
+    if isinstance(include, dict) or isinstance(exclude, dict):
         # middleware must be a list of middleware for this case
         if not isinstance(middleware, list):
             return middleware
@@ -254,21 +260,45 @@ def exclude_tool_from_middleware_by_name(
         # iterate over all middleware names
         # and see which middleware matches the name from the middleware list
         # and recursively call the function to exclude the tools from that middleware
-        for mw_name, names in tool_names.items():
+        keys = set()
+        if isinstance(include, dict):
+            keys.update(include.keys())
+        if isinstance(exclude, dict):
+            keys.update(exclude.keys())
+        for mw_name in keys:
             if mw_name in mw_map:
-                exclude_tool_from_middleware_by_name(mw_map[mw_name], names)
+                filter_tool_from_middleware_by_name(
+                    mw_map[mw_name],
+                    include.get(mw_name) if isinstance(include, dict) else include,
+                    exclude.get(mw_name) if isinstance(exclude, dict) else exclude,
+                )
+        return middleware
+
+    # if neither include nor exclude is provided, return the middleware as is
+    if not include and not exclude:
         return middleware
 
     # now the base cases
     # convert single instances to list
     if not isinstance(middleware, list):
         middlewares = [middleware]
+    else:
+        middlewares = middleware
     # convert tool names to set
     # we do not want duplicate tool names
-    if isinstance(tool_names, str):
-        names_set = {tool_names}
+    if isinstance(include, str):
+        include_set = {include}
+    elif include is None:
+        include_set = None
     else:
-        names_set = set(tool_names)
+        include_set = set(include)
+
+    if isinstance(exclude, str):
+        exclude_set = {exclude}
+    elif exclude is None:
+        exclude_set = None
+    else:
+        exclude_set = set(exclude)
     # iterate over all middleware
     # filter out tools
     filtered_middlewares = []
@@ -277,16 +307,27 @@ def exclude_tool_from_middleware_by_name(
         if not hasattr(mw, "tools") or mw.tools is None:
             continue
         # single-pass filtering
-        mw.tools = [
-            tool for tool in mw.tools if getattr(tool, "name", None) not in names_set
-        ]
+        if include_set is not None:
+            mw.tools = [
+                tool for tool in mw.tools if getattr(tool, "name", None) in include_set
+            ]
+        if exclude_set is not None:
+            mw.tools = [
+                tool
+                for tool in mw.tools
+                if getattr(tool, "name", None) not in exclude_set
+            ]
         filtered_middlewares.append(mw)
 
-    return filtered_middlewares
+    return (
+        filtered_middlewares[0]
+        if len(filtered_middlewares) == 1
+        else filtered_middlewares
+    )
 
 
 __all__ = [
     "SkipSchema",
     "wrap_tool_with_doc_and_error_handling",
-    "exclude_tool_from_middleware_by_name",
+    "filter_tool_from_middleware_by_name",
 ]
