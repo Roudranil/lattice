@@ -1,3 +1,7 @@
+import warnings
+
+warnings.simplefilter("ignore")
+
 from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend
 from deepagents.backends.protocol import BackendFactory
 from fs.tempfs import TempFS
