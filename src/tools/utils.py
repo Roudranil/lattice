@@ -154,7 +154,9 @@ def wrap_tool_with_error_handling(func):
     return wrapped
 
 
-def wrap_tool_with_doc_and_error_handling(func):
+def wrap_tool_with_doc_and_error_handling(
+    func, tool_name: str = "", tool_description: str = ""
+):
     raw_doc = inspect.getdoc(func) or ""
     doc = parse(raw_doc)
 
@@ -193,11 +195,14 @@ def wrap_tool_with_doc_and_error_handling(func):
     # resolve func description
     # return_description = doc.returns.description if doc.returns else None
     # resolve tool description
-    tool_description = _merge_docstring(doc)
+    final_description = tool_description or _merge_docstring(doc)
+
+    # resolve custom name
+    final_name = tool_name or func.__name__
     # create pydantic schema
     args_schema = create_model(
-        f"{func.__name__}",
-        __doc__=tool_description,
+        final_name,
+        __doc__=final_description,
         **fields,
     )
     args_schema.model_config = ConfigDict(
@@ -206,5 +211,6 @@ def wrap_tool_with_doc_and_error_handling(func):
     return tool(
         wrap_tool_with_error_handling(func),
         args_schema=args_schema,
-        description=tool_description,
+        name=final_name,
+        description=final_description,
     )
