@@ -155,7 +155,10 @@ def wrap_tool_with_error_handling(func):
 
 
 def wrap_tool_with_doc_and_error_handling(
-    func, tool_name: str = "", tool_description: str = ""
+    func,
+    custom_name: str = None,
+    custom_description: str = None,
+    custom_param_descriptions: dict = {},
 ):
     raw_doc = inspect.getdoc(func) or ""
     doc = parse(raw_doc)
@@ -179,7 +182,12 @@ def wrap_tool_with_doc_and_error_handling(
             annotation = Any
 
         # resolve description
-        description = doc_param.description if doc_param else ""
+        _provided_custom_param_desc = custom_param_descriptions.get(name, None)
+        description = (
+            _provided_custom_param_desc
+            if _provided_custom_param_desc
+            else (doc_param.description if doc_param else "")
+        )
 
         # what if there are default values
         default = ...
@@ -195,10 +203,12 @@ def wrap_tool_with_doc_and_error_handling(
     # resolve func description
     # return_description = doc.returns.description if doc.returns else None
     # resolve tool description
-    final_description = tool_description or _merge_docstring(doc)
+    final_description = (
+        custom_description if custom_description else _merge_docstring(doc)
+    )
 
     # resolve custom name
-    final_name = tool_name or func.__name__
+    final_name = custom_name if custom_name else func.__name__
     # create pydantic schema
     args_schema = create_model(
         final_name,
@@ -206,11 +216,10 @@ def wrap_tool_with_doc_and_error_handling(
         **fields,
     )
     args_schema.model_config = ConfigDict(
-        json_schema_extra={"description": tool_description}
+        json_schema_extra={"title": final_name, "description": final_description}
     )
     return tool(
         wrap_tool_with_error_handling(func),
         args_schema=args_schema,
-        name=final_name,
         description=final_description,
     )
