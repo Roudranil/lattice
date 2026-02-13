@@ -2,10 +2,20 @@ import ast
 import builtins
 import inspect
 import typing
-from functools import wraps
-from typing import Annotated, Any, Dict, List, Set, Type, TypeVar, get_args, get_origin
-
 from copy import deepcopy
+from functools import wraps
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Set,
+    Type,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from docstring_parser import parse
 from langchain.agents.middleware import AgentMiddleware
@@ -326,8 +336,110 @@ def filter_tool_from_middleware_by_name(
     )
 
 
+NODE_HOOKS: List[str] = [
+    "before_agent",
+    "before_model",
+    "after_model",
+    "after_agent",
+]
+
+WRAP_HOOKS: List[str] = [
+    "wrap_model_call",
+    "wrap_tool_call",
+]
+
+
+def _normalize_middlewares(middlewares: Any | Iterable[Any] | None) -> list[Any]:
+    """normalize middleware input into list."""
+    if middlewares is None:
+        return []
+    if isinstance(middlewares, Iterable) and not isinstance(middlewares, (str, bytes)):
+        return list(middlewares)
+    return [middlewares]
+
+
+def _unwrap_callable(obj: Any) -> Any:
+    """unwrap decorator stacks."""
+    while hasattr(obj, "__wrapped__"):
+        obj = obj.__wrapped__
+    return obj
+
+
+def _middleware_name(mw: Any) -> str:
+    """resolve middleware display name."""
+    if hasattr(mw, "name") and mw.name:
+        return str(mw.name)
+    if inspect.isfunction(mw):
+        return _unwrap_callable(mw).__name__
+    if hasattr(mw, "__class__"):
+        return mw.__class__.__name__
+    return str(mw)
+
+
+def _hook_is_overridden(mw: Any, hook: str) -> bool:
+    """detect whether middleware overrides hook."""
+    method = getattr(mw, hook, None)
+    if method is None or not callable(method):
+        return False
+    cls = type(mw)
+    base_method = None
+    for base in cls.__mro__[1:]:
+        if hook in base.__dict__:
+            base_method = base.__dict__[hook]
+            break
+    if base_method is None:
+        return True
+    method_func = getattr(method, "__func__", method)
+    return method_func is not base_method
+
+
+def _middlewares_for_hook(middlewares: list[Any], hook: str) -> list[str]:
+    """collect middleware names implementing hook."""
+    return [_middleware_name(mw) for mw in middlewares if _hook_is_overridden(mw, hook)]
+
+
+def _print_section(title: str, names: list[str]) -> None:
+    """print middleware section."""
+    if not names:
+        return
+    print(f"{title}:")
+    for name in names:
+        print(f"  {name}")
+    print()
+
+
+def _print_wrap_chain(title: str, names: list[str]) -> None:
+    """print nested wrap chain."""
+    print(f"{title}:")
+    if not names:
+        return
+    for depth, name in enumerate(names, 1):
+        print(f"{'  ' * depth}{name}")
+    print()
+
+
+def visualize_middleware_hook_order(
+    middlewares: Any | Iterable[Any] | None,
+) -> None:
+    """print middleware hook execution order."""
+    middleware_list = _normalize_middlewares(middlewares)
+    before_agent = _middlewares_for_hook(middleware_list, "before_agent")
+    before_model = _middlewares_for_hook(middleware_list, "before_model")
+    wrap_model = _middlewares_for_hook(middleware_list, "wrap_model_call")
+    wrap_tool = _middlewares_for_hook(middleware_list, "wrap_tool_call")
+    after_model = list(reversed(_middlewares_for_hook(middleware_list, "after_model")))
+    after_agent = list(reversed(_middlewares_for_hook(middleware_list, "after_agent")))
+    _print_section("before_agent order", before_agent)
+    _print_section("before_model order", before_model)
+    _print_wrap_chain("wrap_model_call nesting", wrap_model)
+    _print_section("after_model order", after_model)
+    _print_wrap_chain("wrap_tool_call nesting", wrap_tool)
+    _print_section("after_agent order", after_agent)
+
+
 __all__ = [
     "SkipSchema",
     "wrap_tool_with_doc_and_error_handling",
     "filter_tool_from_middleware_by_name",
+    "visualize_middleware_hook_order",
 ]
