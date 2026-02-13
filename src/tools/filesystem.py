@@ -1,285 +1,97 @@
-"""
-LangChain tool wrappers for VirtualFilesystem operations.
-
-These tools provide LLM-accessible filesystem operations on a shared
-VirtualFilesystem instance. All tools return FSResponse-structured
-dictionaries with 'status', 'error', and 'response' keys.
-
-Usage:
-    from src.backends.virtual_filesystem import VirtualFilesystem
-    from src.tools.filesystem_tools import create_filesystem_tools
-
-    vfs = VirtualFilesystem()
-    tools = create_filesystem_tools(vfs)
-    # tools can now be bound to an LLM
-"""
-
-from typing import Dict, List, Literal, Optional
-
-from fs import path as fs_path
-from langchain.tools import ToolRuntime
-from langgraph.types import Command
-
-from src.backends.filesystem import VirtualFilesystem
-from src.schemas.filesystem import FSResponse
+from deepagents.backends import BackendProtocol
+from deepagents.middleware import FilesystemMiddleware
+from langchain.agents.middleware.types import AgentMiddleware
 
 from .utils import wrap_tool_with_doc_and_error_handling
 
+tool_param_descriptions = {
+    "ls": {"path": "Absolute path to the directory to list. Must start with '/'. "},
+    "read_file": {
+        "file_path": "Absolute path to the file to read. Must start with '/'",
+        "offset": "Line number to start reading from (0-indexed). Default: 0.",
+        "limit": "Maximum number of lines to read. Default: 2000.",
+    },
+    "write_file": {
+        "file_path": "Absolute path where the file should be created. Must start with '/'.",
+        "content": "String content to write to the file.",
+    },
+    "edit_file": {
+        "file_path": "Absolute path to the file to edit. Must start with '/'.",
+        "old_string": "Exact string to search for and replace. Must match exactly including whitespace and indentation.",
+        "new_content": "String to replace old_string with. Must be different from old_string.",
+        "replace_all": "If True, replace all occurrences. If False (default), old_string must be unique in the file or the edit fails.",
+    },
+    "glob": {
+        "pattern": "Glob pattern to match files against (e.g., `'*.py'`, `'**/*.txt'`).",
+        "path": "Base directory to search from. Defaults to root (`/`).",
+    },
+    "grep": {
+        "pattern": ' Literal string to search for (NOT regex). Performs exact substring matching within file content. Example: "TODO" matches any line containing "TODO", but not "TODOS" or "TO DO".',
+        "path": 'Optional directory path to search in. If None, searches in current working directory. Example: "/workspace/src".',
+        "glob": """Optional glob pattern to filter which FILES to search.
+Filters by filename/path, not content.
+Supports standard glob wildcards:
+- `*` matches any characters in filename
+- `**` matches any directories recursively
+- `?` matches single character
+- `[abc]` matches one character from set""",
+        "output_mode": """Specifies format of grep output. Options:
+- file_with_matches: file paths only, default
+- content: matching lines with content
+- count: match counts per file""",
+    },
+}
 
-def create_filesystem_tools(vfs: VirtualFilesystem) -> List:
-    """Create LangChain tools bound to a VirtualFilesystem instance.
 
-    Args:
-        vfs (VirtualFilesystem): The filesystem instance to operate on.
-
-    Returns:
-        List: List of LangChain tool functions.
-    """
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_info(path: str = "/") -> Dict:
-        """Get metadata information about a file or directory.
-
-        Args:
-            path (str): Path to the file or directory. Defaults to root "/".
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a info dict with the below keys on success:
-            name (str): name of the file
-            path (str): absolute path to the file
-            type (str): file or directory
-
-        Examples:
-        ```
-        input:
-            {"path": "/"}
-        output:
-            {'status': 'ok', 'error': None, 'response': {'name': '', 'path': '/', 'type': 'directory'}}
-        ```
-        """
-        return vfs.info(path)
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_ls(path: str = "/") -> Dict:
-        """List contents of a directory.
-
-        Args:
-            path (str): Path to the directory. Defaults to root "/".
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a list of info dicts with the below keys for each file:
-            name (str): name of the file
-            path (str): absolute path to the file
-            type (str): file or directory
-
-        Examples:
-        ```
-        input:
-            {"path": "/"}
-        output:
-            {
-                'status': 'ok',
-                'error': None,
-                'response': [
-                    {'name': 'memories', 'path': '/memories', 'type': 'directory'},
-                    {'name': 'artifacts', 'path': '/artifacts', 'type': 'directory'}
-                ]
-            }
-        ```
-        """
-        result = vfs.fs.listdir(vfs._resolve(path))
-        out = []
-        for r in result:
-            out.append(vfs.info(fs_path.join(vfs._resolve(path), r)))
-        return out
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_write(
-        path: str,
-        content: Optional[str] = None,
-        mode: Literal["append", "overwrite"] = "overwrite",
-    ) -> Dict:
-        """Write content to a file, creating it if it doesn't exist.
-
-        If file doesn't exist, it is created. If content is provided, file is
-        updated based on mode.
-
-        Args:
-            path (str): Path to the file to write.
-            content (Optional[str]): Text content to write. If None, only ensures file exists.
-            mode (Literal["append", "overwrite"]): 'append' adds to end, 'overwrite' replaces.
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a info dict with the below keys on success:
-            name (str): name of the file
-            path (str): absolute path to the file
-            type (str): file or directory
-
-        Examples:
-        ```
-        input:
-            {"path": "/RESEARCH_PLAN.md", "content": "# Research plan", "mode": "overwrite"}
-        output:
-            {
-                'status': 'ok',
-                'error': None,
-                'response': {'name': 'RESEARCH_PLAN.md', 'path': '/RESEARCH_PLAN.md', 'type': 'file'}
-            }
-        ```
-        """
-        return vfs.write(path, content, mode)
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_mkdir(path: str) -> Dict:
-        """Create a directory, including any necessary parent directories.
-
-        Args:
-            path (str): Path to the directory to create.
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a info dict with the below keys on success:
-            name (str): name of the file
-            path (str): absolute path to the file
-            type (str): file or directory
-
-        Examples:
-        ```
-        input:
-            {"path": "/artifacts/notes/"}
-        output:
-            {'status': 'ok', 'error': None, 'response': {'name': 'notes', 'path': '/artifacts/notes', 'type': 'directory'}}
-        """
-        vfs.fs.makedirs(vfs._resolve(path))
-        return vfs.info(vfs._resolve(path))
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_read(
-        path: str,
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict:
-        """Read text content from a file, optionally a specific line range.
-
-        Uses 0-indexed line numbers with Python slice semantics.
-
-        Args:
-            path (str): Path to the file to read.
-            start (Optional[int]): Starting line index (0-indexed, inclusive).
-            end (Optional[int]): Ending line index (0-indexed, exclusive).
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" contains the following keys: 'info' dict, 'start', 'end', and 'content'.
-
-        Examples:
-        ```
-        output:
-            {
-                'status': 'ok',
-                'error': None,
-                'response': {
-                    'info': {'name': 'note.md', 'path': '/artifacts/notes/note.md', 'type': 'file'},
-                    'start': 0,
-                    'end': 1,
-                    'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit'
-                }
-            }
-        ```
-        """
-        return vfs.read(path, start, end)
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_glob(pattern: str) -> Dict:
-        """Find files matching a glob pattern.
-
-        Pattern is resolved relative to current working directory.
-        Supports wildcards: *, **, ?
-
-        Args:
-            pattern (str): Glob pattern (e.g., '*.py', 'dir/**/*.txt').
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a list of info dicts with the below keys:
-            name (str): name of the file
-            path (str): absolute path to the file
-            type (str): file or directory
-
-        Examples:
-        ```
-        input:
-            {"pattern": "**/*note*"}
-        output:
-            {
-                'status': 'ok',
-                'error': None,
-                'response': [
-                    {'name': 'mynote2.py', 'path': '/artifacts/mynote2.py', 'type': 'file'},
-                    {'name': 'note.md', 'path': '/artifacts/notes/note.md', 'type': 'file'},
-                    {'name': 'mynote.md', 'path': '/artifacts/notes/mynote.md', 'type': 'file'}
-                ]
-            }
-        """
-        return vfs.glob(pattern)
-
-    @wrap_tool_with_doc_and_error_handling
-    def fs_grep(
-        grep_pattern: str,
-        path: str,
-        file_name_pattern: Optional[str] = None,
-        character_window: Optional[int] = None,
-        line_window: Optional[int] = None,
-        ignore_case: bool = False,
-    ) -> Dict:
-        """Search for regex pattern matches within files.
-
-        Searches a file or recursively walks a directory to find matches.
-        When path is a file, file_name_pattern is ignored.
-
-        Args:
-            grep_pattern (str): Regex pattern to search for. Does not support grepping across lines. Only patterns that grep in a single line will work.
-            path (str): Path to file or directory to search.
-            file_name_pattern (Optional[str]): Glob pattern to filter files in directories.
-            character_window (Optional[int]): Characters of context around match.
-            line_window (Optional[int]): Lines of context around match (takes precedence).
-            ignore_case (bool): Case-insensitive matching. Defaults to False.
-
-        Returns:
-            Dict: dict with the keys "status", "error" and "response".
-            "response" is a list of dicts with the below keys:
-            path (str): path to the matched file
-            snippet (str): the matched snippet including windows
-            line_number (str): the line number where the match was found
-            match_range (list): list[start, end] to denote the indices on that line where the match was found.
-            match (Optional[str]): the exact string matched (without windows)
-
-        Examples:
-        ```
-        input:
-            {"path": "/", "grep_pattern": "ipsum", "character_window": 2}
-        output:
-            {
-                'status': 'ok',
-                'error': None,
-                'response': [
-                    {'path': '/artifacts/mynote2.py', 'snippet': 'm ipsum d', 'line_number': 0, 'match_range': [6, 11]},
-                    {'path': '/artifacts/mynote2.py', 'snippet': 'ipsum d', 'line_number': 1, 'match_range': [0, 5]},
-                    {'path': '/artifacts/notes/note.md', 'snippet': 'm ipsum d', 'line_number': 0, 'match_range': [6, 11]}
-                ]
-            }
-        ```
-        """
-        return vfs.grep(
-            grep_pattern,
-            path,
-            file_name_pattern,
-            character_window,
-            line_window,
-            ignore_case,
+class FileSystemToolsMiddleware(FilesystemMiddleware):
+    def __init__(
+        self,
+        *,
+        backend: BackendProtocol = None,
+        system_prompt: str = None,
+        custom_tool_descriptions: dict = None,
+        tool_token_limit_before_evict: int = 20000,
+        include_tools_by_name: str = [],
+        exclude_tools_by_name: str = ["execute"],
+    ):
+        super().__init__(
+            backend=backend,
+            system_prompt=system_prompt,
+            custom_tool_descriptions=custom_tool_descriptions,
+            tool_token_limit_before_evict=tool_token_limit_before_evict,
         )
 
-    return [fs_info, fs_ls, fs_write, fs_mkdir, fs_read, fs_glob, fs_grep]
+        # filter from the default filesystem tools
+        # like, by default "execute" tool is excluded
+        # and then reassing the schemas for them
+        include_set = set(include_tools_by_name)
+        exclude_set = set(exclude_tools_by_name)
+        if include_set:
+            self.tools = [
+                tool
+                for tool in self.tools
+                if getattr(tool, "name", None) in include_set
+            ]
+        if exclude_set:
+            self.tools = [
+                tool
+                for tool in self.tools
+                if getattr(tool, "name", None) not in exclude_set
+            ]
+        for i in range(len(self.tools)):
+            self.tools[i].args_schema = wrap_tool_with_doc_and_error_handling(
+                self.tools[i].func,
+                custom_name=self.tools[i].name,
+                custom_description=self.tools[i].description,
+                custom_param_descriptions=tool_param_descriptions.get(
+                    self.tools[i].name, {}
+                ),
+            ).args_schema
+
+    # need to implement the write todos and research plans tool
+    # they need to be sync and async
+    def _create_write_todos_tool(self):
+        pass
+
+    def _create_write_research_plan(self):
+        pass

@@ -1,3 +1,4 @@
+from .filesystem import FileSystemToolsMiddleware
 from .instructions import USAGE_INSTRUCTIONS
 from .thinking import (
     switch_to_ask_mode_tool,
