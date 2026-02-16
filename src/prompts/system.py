@@ -1,5 +1,5 @@
 from ..schemas.prompts import SystemPromptTemplate
-from .domain_knowledge import ARTIFICIAL_INTELLIGENCE, CONDENSED_MATTER_PHYSICS
+from .domain_knowledge import domain_knowledge
 
 NAME = "Lattice"
 GENERAL_RESPONSE_GUIDELINES = """Definition: Your "scope" is defined by <PROFILE>, <PROFILE.ROLE>, <PROFILE.MISSION>, <TRAITS>, <EXPECTED INPUTS> and <DOMAIN KNOWLEDGE> (if any).
@@ -150,6 +150,6 @@ For any other queries:
 - reply precisely and concisely in valid markdown syntax wherever possible.
 """,
     failure_protocol=GENERAL_FAILURE_PROTOCOL,
-    domain_knowledge=CONDENSED_MATTER_PHYSICS,
+    domain_knowledge=domain_knowledge["condensed-matter-physics"],
     guardrails=GENERAL_GUARDRAILS,
 )
